@@ -15,21 +15,177 @@ app = Flask(__name__)
 
 HTML_FORM = '''
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Excel Processor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Processor | Sky Analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(145deg, #c7e9ff 0%, #9cc9e8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            padding: 2rem 2rem 2.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #1e4b6e, #2c7da0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #1a4b6e;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="file"],
+        input[type="date"] {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        input[type="file"]:hover,
+        input[type="date"]:hover {
+            border-color: #2c7da0;
+        }
+
+        input[type="file"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #1e4b6e;
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+            background-color: #ffffff;
+        }
+
+        /* Custom file input styling (optional) */
+        input[type="file"]::file-selector-button {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 18px;
+            margin-right: 16px;
+            font-weight: 500;
+            color: #1a4b6e;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: #cbd5e1;
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(95deg, #1e4b6e, #2c7da0);
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        button:hover {
+            transform: scale(1.02);
+            background: linear-gradient(95deg, #123f5e, #1f6b8c);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 1.8rem;
+            font-size: 0.75rem;
+            color: #5b8cae;
+            border-top: 1px solid #e2edf2;
+            padding-top: 1.2rem;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 1.5rem;
+            }
+            h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h2>Upload Files and Enter Date</h2>
-    <form method="post" action="/upload" enctype="multipart/form-data">
-        <label>Main File (.xlsx/.xls/.html):</label>
-        <input type="file" name="main_file" accept=".xlsx,.xls,.html" required><br><br>
-        <label>Lookup File (.xlsx):</label>
-        <input type="file" name="lookup_file" accept=".xlsx" required><br><br>
-        <label>Date (YYYY-MM-DD):</label>
-        <input type="date" name="date" required><br><br>
-        <input type="submit" value="Process">
-    </form>
+    <div class="card">
+        <h2>☁️ Excel Processor</h2>
+        <form method="post" action="/upload" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>📁 Main File (.xlsx/.xls/.html)</label>
+                <input type="file" name="main_file" accept=".xlsx,.xls,.html" required>
+            </div>
+            <div class="form-group">
+                <label>📑 Lookup File (.xlsx)</label>
+                <input type="file" name="lookup_file" accept=".xlsx" required>
+            </div>
+            <div class="form-group">
+                <label>📅 Date (YYYY-MM-DD)</label>
+                <input type="date" name="date" required>
+            </div>
+            <button type="submit">🚀 Process & Download</button>
+        </form>
+        <div class="footer-note">
+            Secure • Serverless • Sky‑fast processing
+        </div>
+    </div>
 </body>
 </html>
 '''
