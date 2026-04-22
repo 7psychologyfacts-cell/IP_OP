@@ -508,14 +508,12 @@ def upload():
         op_df = update_sponsor_type(op_df)
 
         # Move remarks to last column
-        def move_remarks_last(df_in):
-            if "Remarks" in df_in.columns:
-                cols = list(df_in.columns)
-                cols.append(cols.pop(cols.index("Remarks")))
-                df_in = df_in[cols]
-            return df_in
-        ip_df = move_remarks_last(ip_df)
-        op_df = move_remarks_last(op_df)
+def move_remarks_last(df):
+    df.columns = df.columns.str.strip()
+    if "Remarks" in df.columns:
+        cols = [c for c in df.columns if c != "Remarks"] + ["Remarks"]
+        return df[cols]
+    return df
 
         # Fill blanks
         ip_df = ip_df.fillna("-")
@@ -530,6 +528,9 @@ def upload():
         # OP file type
         map_filetype = sheet1.set_index(sheet1.columns[0])[sheet1.columns[1]].to_dict()
         op_df["File Type"] = op_df["TPA Name"].map(map_filetype).fillna("NA")
+
+        ip_df = move_remarks_last(ip_df)
+        op_df = move_remarks_last(op_df)
 
         # Formatting helpers
         HEADER_COLOR = "FFCA70"
