@@ -420,57 +420,66 @@ def upload():
         # File type logic (IP)
         # ---------------------------------------------------------------
         ip_df["File Type"] = ""
+
         ip_df.loc[
             (ip_df["Sponsor Type"] == "Clinical Research") & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
+
         ip_df.loc[
             (ip_df["Sponsor Type"] == "Self Pay Credit") & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Non Cyclic"
+
         ip_df.loc[
             (ip_df["TPA Name"].str.contains("rajas|rajasthan", case=False, na=False)) & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Non Cyclic"
+
         ip_df.loc[
             (ip_df["Sponsor Type"] == "Government") &
             (ip_df["TPA Name"].str.contains("central|Central", case=False, na=False)) &
             (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
+
         ip_df.loc[
             (ip_df["Invoice Amount"].astype(float) < 5000) & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
+
         ip_df.loc[
             (ip_df["Unit"] == "Indore") & (ip_df["Sponsor Type"] != "Insurance") & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
+
         ip_df.loc[
             (ip_df["Unit"] == "Surat") & (~ip_df["Sponsor Type"].isin(["Insurance","Government"])) & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
 
-        # ---CHANGE 1 START---
-        # Unit == "SG" AND TPA Name in specified list AND Invoice Amount <= 10000 → Cyclic
+        # Fill remaining blank File Types as Non Cyclic
+        ip_df["File Type"] = ip_df["File Type"].replace("", "Non Cyclic")
+
+        # ---------------------------------------------------------------
+        # NEW RULE — Applied LAST, overrides any previously assigned File Type:
+        # Unit == "SG"  AND  TPA Name is one of the 6 specified values
+        # AND  Invoice Amount <= 10000  →  File Type = "Cyclic"
+        # ---------------------------------------------------------------
         sg_tpa_list = [
             "PRL[CHSS]",
             "ISRO [CHSS]",
             "INDIAN OIL CORPORATION LTD.",
             "ONGC Ahmedabad",
             "IPR[CHSS]",
-            "SAC[CHSS]"
+            "SAC[CHSS]",
         ]
         ip_df.loc[
             (ip_df["Unit"] == "SG") &
             (ip_df["TPA Name"].isin(sg_tpa_list)) &
-            (ip_df["Invoice Amount"].astype(float) <= 10000) &
-            (ip_df["File Type"] == ""),
+            (ip_df["Invoice Amount"].astype(float) <= 10000),
             "File Type"
         ] = "Cyclic"
-        # ---CHANGE 1 END---
-
-        ip_df["File Type"] = ip_df["File Type"].replace("", "Non Cyclic")
         # ---------------------------------------------------------------
 
         # Remarks mapping
@@ -516,73 +525,75 @@ def upload():
         HEADER_COLOR = "FFCA70"
         TABLE_COLOR  = "51BFDA"
 
-        # ---CHANGE 2 START---
-        # Helper: count data rows (excluding header) for sheet tab rename
-        def sheet_tab_name(df_data, label):
-            # df_data is the filtered dataframe written to that sheet
-            # header row = 1, data rows = len(df_data)
-            count = len(df_data)
-            return f"{count} {label}"
-        # ---CHANGE 2 END---
-
-        # Output IP
-        ip_out_path = os.path.join(tmpdir, "OUTPUT_IP.xlsx")
-
-        ip_nc = ip_df[(ip_df["File Type"]=="Non Cyclic") & (ip_df["Ageing"].isin([
+        # ------------------------------------------------------------------
+        # Build NC / Cyclic subsets — IP
+        # ------------------------------------------------------------------
+        ip_nc = ip_df[(ip_df["File Type"] == "Non Cyclic") & (ip_df["Ageing"].isin([
             "b) 3-5","c) 6-8","d) 9-15","e) 16-20",
             "f) 21-30","g) 31-33","h) 34-60","i) 61-65",
             "j) 66-180","k) 181-365","l) 365+"
         ]))].sort_values("Unit")
-        ip_cyc = ip_df[(ip_df["File Type"]=="Cyclic") & (ip_df["Ageing"].isin([
+
+        ip_cyc = ip_df[(ip_df["File Type"] == "Cyclic") & (ip_df["Ageing"].isin([
             "h) 34-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
         ]))].sort_values("Unit")
 
-        # ---CHANGE 2: use count in sheet tab name---
-        ip_nc_tab  = sheet_tab_name(ip_nc,  "NC")
-        ip_cyc_tab = sheet_tab_name(ip_cyc, "Cyclic")
+        # Sheet tab names include data-row count (header row excluded)
+        ip_nc_sheet_name  = f"{len(ip_nc)} NC"
+        ip_cyc_sheet_name = f"{len(ip_cyc)} Cyclic"
 
+        # ------------------------------------------------------------------
+        # Build NC / Cyclic subsets — OP
+        # ------------------------------------------------------------------
+        op_nc = op_df[(op_df["File Type"] == "Non Cyclic") & (op_df["Ageing"].isin([
+            "c) 6-8","d) 9-15","e) 16-20","f) 21-30","g) 31-35",
+            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+
+        op_cyc = op_df[(op_df["File Type"] == "Cyclic") & (op_df["Ageing"].isin([
+            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+
+        op_nc_sheet_name  = f"{len(op_nc)} NC"
+        op_cyc_sheet_name = f"{len(op_cyc)} Cyclic"
+
+        # ------------------------------------------------------------------
+        # Output IP
+        # ------------------------------------------------------------------
+        ip_out_path = os.path.join(tmpdir, "OUTPUT_IP.xlsx")
         with pd.ExcelWriter(ip_out_path, engine='xlsxwriter') as writer:
             ip_df.to_excel(writer, sheet_name="IP", index=False)
-            ip_nc.to_excel(writer, sheet_name=ip_nc_tab, index=False)
-            ip_cyc.to_excel(writer, sheet_name=ip_cyc_tab, index=False)
+            ip_nc.to_excel(writer, sheet_name=ip_nc_sheet_name, index=False)
+            ip_cyc.to_excel(writer, sheet_name=ip_cyc_sheet_name, index=False)
             build_pivot_sheet(ip_df, writer, "Pivot")
+
         # Apply openpyxl formatting
         wb = load_workbook(ip_out_path)
         apply_header_format(wb["IP"], HEADER_COLOR)
         auto_col_width(wb["IP"])
-        apply_table_format(wb[ip_nc_tab], TABLE_COLOR)
-        auto_col_width(wb[ip_nc_tab])
-        apply_table_format(wb[ip_cyc_tab], TABLE_COLOR)
-        auto_col_width(wb[ip_cyc_tab])
+        apply_table_format(wb[ip_nc_sheet_name], TABLE_COLOR)
+        auto_col_width(wb[ip_nc_sheet_name])
+        apply_table_format(wb[ip_cyc_sheet_name], TABLE_COLOR)
+        auto_col_width(wb[ip_cyc_sheet_name])
         wb.save(ip_out_path)
 
+        # ------------------------------------------------------------------
         # Output OP
+        # ------------------------------------------------------------------
         op_out_path = os.path.join(tmpdir, "OUTPUT_OP.xlsx")
-
-        op_nc = op_df[(op_df["File Type"]=="Non Cyclic") & (op_df["Ageing"].isin([
-            "c) 6-8","d) 9-15","e) 16-20","f) 21-30","g) 31-35",
-            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
-        ]))].sort_values("Unit")
-        op_cyc = op_df[(op_df["File Type"]=="Cyclic") & (op_df["Ageing"].isin([
-            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
-        ]))].sort_values("Unit")
-
-        # ---CHANGE 2: use count in sheet tab name---
-        op_nc_tab  = sheet_tab_name(op_nc,  "NC")
-        op_cyc_tab = sheet_tab_name(op_cyc, "Cyclic")
-
         with pd.ExcelWriter(op_out_path, engine='xlsxwriter') as writer:
             op_df.to_excel(writer, sheet_name="OP", index=False)
-            op_nc.to_excel(writer, sheet_name=op_nc_tab, index=False)
-            op_cyc.to_excel(writer, sheet_name=op_cyc_tab, index=False)
+            op_nc.to_excel(writer, sheet_name=op_nc_sheet_name, index=False)
+            op_cyc.to_excel(writer, sheet_name=op_cyc_sheet_name, index=False)
             build_pivot_sheet(op_df, writer, "Pivot")
+
         wb2 = load_workbook(op_out_path)
         apply_header_format(wb2["OP"], HEADER_COLOR)
         auto_col_width(wb2["OP"])
-        apply_table_format(wb2[op_nc_tab], TABLE_COLOR)
-        auto_col_width(wb2[op_nc_tab])
-        apply_table_format(wb2[op_cyc_tab], TABLE_COLOR)
-        auto_col_width(wb2[op_cyc_tab])
+        apply_table_format(wb2[op_nc_sheet_name], TABLE_COLOR)
+        auto_col_width(wb2[op_nc_sheet_name])
+        apply_table_format(wb2[op_cyc_sheet_name], TABLE_COLOR)
+        auto_col_width(wb2[op_cyc_sheet_name])
         wb2.save(op_out_path)
 
         # Create ZIP of the two output files
