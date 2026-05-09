@@ -10,9 +10,7 @@ from openpyxl import load_workbook
 from datetime import datetime
 from flask import Flask, request, render_template_string, send_file
 import xlsxwriter
-
 app = Flask(__name__)
-
 HTML_FORM = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +24,6 @@ HTML_FORM = '''
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
             background: linear-gradient(145deg, #c7e9ff 0%, #9cc9e8 100%);
@@ -36,7 +33,6 @@ HTML_FORM = '''
             justify-content: center;
             padding: 20px;
         }
-
         .card {
             max-width: 550px;
             width: 100%;
@@ -47,11 +43,9 @@ HTML_FORM = '''
             padding: 2rem 2rem 2.5rem;
             transition: transform 0.3s ease;
         }
-
         .card:hover {
             transform: translateY(-5px);
         }
-
         h2 {
             text-align: center;
             margin-bottom: 1.5rem;
@@ -63,11 +57,9 @@ HTML_FORM = '''
             color: transparent;
             letter-spacing: -0.3px;
         }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
-
         label {
             display: block;
             font-weight: 500;
@@ -76,7 +68,6 @@ HTML_FORM = '''
             font-size: 0.9rem;
             letter-spacing: 0.3px;
         }
-
         input[type="file"],
         input[type="date"] {
             width: 100%;
@@ -88,12 +79,10 @@ HTML_FORM = '''
             transition: all 0.2s ease;
             font-family: inherit;
         }
-
         input[type="file"]:hover,
         input[type="date"]:hover {
             border-color: #2c7da0;
         }
-
         input[type="file"]:focus,
         input[type="date"]:focus {
             outline: none;
@@ -101,8 +90,6 @@ HTML_FORM = '''
             box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
             background-color: #ffffff;
         }
-
-        /* Custom file input styling (optional) */
         input[type="file"]::file-selector-button {
             background: #e2e8f0;
             border: none;
@@ -114,11 +101,9 @@ HTML_FORM = '''
             cursor: pointer;
             transition: 0.2s;
         }
-
         input[type="file"]::file-selector-button:hover {
             background: #cbd5e1;
         }
-
         button {
             width: 100%;
             background: linear-gradient(95deg, #1e4b6e, #2c7da0);
@@ -134,17 +119,14 @@ HTML_FORM = '''
             margin-top: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
         }
-
         button:hover {
             transform: scale(1.02);
             background: linear-gradient(95deg, #123f5e, #1f6b8c);
             box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
         }
-
         button:active {
             transform: scale(0.98);
         }
-
         .footer-note {
             text-align: center;
             margin-top: 1.8rem;
@@ -153,7 +135,6 @@ HTML_FORM = '''
             border-top: 1px solid #e2edf2;
             padding-top: 1.2rem;
         }
-
         @media (max-width: 480px) {
             .card {
                 padding: 1.5rem;
@@ -189,7 +170,6 @@ HTML_FORM = '''
 </body>
 </html>
 '''
-
 def apply_header_format(ws, header_color):
     header_fill = PatternFill("solid", fgColor=header_color)
     header_font = Font(bold=True, color="000000")
@@ -206,7 +186,6 @@ def apply_header_format(ws, header_color):
     for row in range(2, max_row + 1):
         for col in range(1, max_col + 1):
             ws.cell(row=row, column=col).border = all_border
-
 def apply_table_format(ws, table_color):
     header_fill = PatternFill("solid", fgColor=table_color)
     header_font = Font(bold=True, color="000000")
@@ -228,7 +207,6 @@ def apply_table_format(ws, table_color):
             c = ws.cell(row=row, column=col)
             c.fill = fill
             c.border = all_border
-
 def auto_col_width(ws):
     for col in ws.columns:
         max_len = 0
@@ -239,7 +217,6 @@ def auto_col_width(ws):
             except:
                 pass
         ws.column_dimensions[col_letter].width = min(max_len + 2, 40)
-
 def build_pivot_sheet(df_pivot, writer, sheet_name):
     df_pivot = df_pivot.copy()
     df_pivot.columns = df_pivot.columns.str.strip()
@@ -341,21 +318,17 @@ def build_pivot_sheet(df_pivot, writer, sheet_name):
                 if file_type == "Cyclic" and col_name in cy_cols:
                     fmt = highlight_format
             worksheet.write(row_num + 1, col, value, fmt)
-
 @app.route('/')
 def index():
     return render_template_string(HTML_FORM)
-
 @app.route('/upload', methods=['POST'])
 def upload():
     # Get files and date
     main_file = request.files['main_file']
     lookup_file = request.files['lookup_file']
     input_date_str = request.form['date']
-
     if not main_file or not lookup_file:
         return "Missing files", 400
-
     # Create temporary directory for processing
     with tempfile.TemporaryDirectory() as tmpdir:
         # Save uploaded files
@@ -363,23 +336,19 @@ def upload():
         lookup_path = os.path.join(tmpdir, lookup_file.filename)
         main_file.save(main_path)
         lookup_file.save(lookup_path)
-
         # Read main data
         try:
             tables = pd.read_html(main_path)
             df_raw = tables[0]
         except:
             df_raw = pd.read_excel(main_path)
-
         # First row as header
         df_raw.columns = df_raw.iloc[0]
         df_raw = df_raw[1:]
         df_raw = df_raw.reset_index(drop=True)
-
         # Save temp Excel
         temp_file = os.path.join(tmpdir, "temp_output.xlsx")
         df_raw.to_excel(temp_file, index=False)
-
         # Date formatting in temp file (column M)
         wb_temp = openpyxl.load_workbook(temp_file)
         ws_temp = wb_temp.active
@@ -394,12 +363,10 @@ def upload():
                     pass
                 cell.number_format = 'DD-MM-YYYY'
         wb_temp.save(temp_file)
-
         # Read lookup file
         lookup = pd.ExcelFile(lookup_path)
         sheet1 = lookup.parse("Sheet1")
         sheet2 = lookup.parse("Sheet2")
-
         # Process main data
         df = pd.read_excel(temp_file)
         df = df.replace('\n', ' ', regex=True)
@@ -408,14 +375,11 @@ def upload():
             df = df[~df["Unit"].str.contains("--End-", na=False)]
         df["TPA Name"] = df["TPA Name"].fillna(df["Sponsor/Insurance"])
         df = df.sort_values(by="Admission No.", na_position='last')
-
         # Split IP & OP
         ip_df = df[df["Admission No."].notna()].copy()
         op_df = df[df["Admission No."].isna()].copy()
-
         # Date
         input_date = pd.to_datetime(input_date_str)
-
         # Days + ageing function
         def add_days_ageing(data, op=False):
             data["Invoice Date"] = pd.to_datetime(
@@ -449,11 +413,12 @@ def upload():
                 ]
             data["Ageing"] = np.select(conditions, choices, default="l) 365+")
             return data
-
         ip_df = add_days_ageing(ip_df)
         op_df = add_days_ageing(op_df, op=True)
 
+        # ---------------------------------------------------------------
         # File type logic (IP)
+        # ---------------------------------------------------------------
         ip_df["File Type"] = ""
         ip_df.loc[
             (ip_df["Sponsor Type"] == "Clinical Research") & (ip_df["File Type"] == ""),
@@ -485,14 +450,34 @@ def upload():
             (ip_df["Unit"] == "Surat") & (~ip_df["Sponsor Type"].isin(["Insurance","Government"])) & (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
+
+        # ---CHANGE 1 START---
+        # Unit == "SG" AND TPA Name in specified list AND Invoice Amount <= 10000 → Cyclic
+        sg_tpa_list = [
+            "PRL[CHSS]",
+            "ISRO [CHSS]",
+            "INDIAN OIL CORPORATION LTD.",
+            "ONGC Ahmedabad",
+            "IPR[CHSS]",
+            "SAC[CHSS]"
+        ]
+        ip_df.loc[
+            (ip_df["Unit"] == "SG") &
+            (ip_df["TPA Name"].isin(sg_tpa_list)) &
+            (ip_df["Invoice Amount"].astype(float) <= 10000) &
+            (ip_df["File Type"] == ""),
+            "File Type"
+        ] = "Cyclic"
+        # ---CHANGE 1 END---
+
         ip_df["File Type"] = ip_df["File Type"].replace("", "Non Cyclic")
+        # ---------------------------------------------------------------
 
         # Remarks mapping
         sheet2_unique = sheet2.drop_duplicates(subset=[sheet2.columns[1]])
         remarks_map = sheet2_unique.set_index(sheet2.columns[1])[sheet2.columns[8]].to_dict()
         ip_df["Remarks"] = ip_df["Invoice No."].map(remarks_map).fillna("-")
         op_df["Remarks"] = op_df["Invoice No."].map(remarks_map).fillna("-")
-
         # Update sponsor type
         def update_sponsor_type(df_in):
             def check_remark(row):
@@ -506,15 +491,13 @@ def upload():
             return df_in
         ip_df = update_sponsor_type(ip_df)
         op_df = update_sponsor_type(op_df)
-
-        # Move remarks to last column (UPDATED AS REQUESTED)
+        # Move remarks to last column
         def move_remarks_last(df):
             df.columns = df.columns.str.strip()
             if "Remarks" in df.columns:
                 cols = [c for c in df.columns if c != "Remarks"] + ["Remarks"]
                 return df[cols]
             return df
-
         # Fill blanks
         ip_df = ip_df.fillna("-")
         op_df = op_df.fillna("-")
@@ -524,66 +507,82 @@ def upload():
                 ip_df[col] = pd.to_numeric(ip_df[col], errors='coerce')
             if col in op_df.columns:
                 op_df[col] = pd.to_numeric(op_df[col], errors='coerce')
-
         # OP file type
         map_filetype = sheet1.set_index(sheet1.columns[0])[sheet1.columns[1]].to_dict()
         op_df["File Type"] = op_df["TPA Name"].map(map_filetype).fillna("NA")
-
         ip_df = move_remarks_last(ip_df)
         op_df = move_remarks_last(op_df)
-
         # Formatting helpers
         HEADER_COLOR = "FFCA70"
         TABLE_COLOR  = "51BFDA"
 
+        # ---CHANGE 2 START---
+        # Helper: count data rows (excluding header) for sheet tab rename
+        def sheet_tab_name(df_data, label):
+            # df_data is the filtered dataframe written to that sheet
+            # header row = 1, data rows = len(df_data)
+            count = len(df_data)
+            return f"{count} {label}"
+        # ---CHANGE 2 END---
+
         # Output IP
         ip_out_path = os.path.join(tmpdir, "OUTPUT_IP.xlsx")
+
+        ip_nc = ip_df[(ip_df["File Type"]=="Non Cyclic") & (ip_df["Ageing"].isin([
+            "b) 3-5","c) 6-8","d) 9-15","e) 16-20",
+            "f) 21-30","g) 31-33","h) 34-60","i) 61-65",
+            "j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+        ip_cyc = ip_df[(ip_df["File Type"]=="Cyclic") & (ip_df["Ageing"].isin([
+            "h) 34-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+
+        # ---CHANGE 2: use count in sheet tab name---
+        ip_nc_tab  = sheet_tab_name(ip_nc,  "NC")
+        ip_cyc_tab = sheet_tab_name(ip_cyc, "Cyclic")
+
         with pd.ExcelWriter(ip_out_path, engine='xlsxwriter') as writer:
             ip_df.to_excel(writer, sheet_name="IP", index=False)
-            ip_nc = ip_df[(ip_df["File Type"]=="Non Cyclic") & (ip_df["Ageing"].isin([
-                "b) 3-5","c) 6-8","d) 9-15","e) 16-20",
-                "f) 21-30","g) 31-33","h) 34-60","i) 61-65",
-                "j) 66-180","k) 181-365","l) 365+"
-            ]))].sort_values("Unit")
-            ip_nc.to_excel(writer, sheet_name="NC", index=False)
-            ip_cyc = ip_df[(ip_df["File Type"]=="Cyclic") & (ip_df["Ageing"].isin([
-                "h) 34-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
-            ]))].sort_values("Unit")
-            ip_cyc.to_excel(writer, sheet_name="Cyclic", index=False)
+            ip_nc.to_excel(writer, sheet_name=ip_nc_tab, index=False)
+            ip_cyc.to_excel(writer, sheet_name=ip_cyc_tab, index=False)
             build_pivot_sheet(ip_df, writer, "Pivot")
-
         # Apply openpyxl formatting
         wb = load_workbook(ip_out_path)
         apply_header_format(wb["IP"], HEADER_COLOR)
         auto_col_width(wb["IP"])
-        apply_table_format(wb["NC"], TABLE_COLOR)
-        auto_col_width(wb["NC"])
-        apply_table_format(wb["Cyclic"], TABLE_COLOR)
-        auto_col_width(wb["Cyclic"])
+        apply_table_format(wb[ip_nc_tab], TABLE_COLOR)
+        auto_col_width(wb[ip_nc_tab])
+        apply_table_format(wb[ip_cyc_tab], TABLE_COLOR)
+        auto_col_width(wb[ip_cyc_tab])
         wb.save(ip_out_path)
 
         # Output OP
         op_out_path = os.path.join(tmpdir, "OUTPUT_OP.xlsx")
+
+        op_nc = op_df[(op_df["File Type"]=="Non Cyclic") & (op_df["Ageing"].isin([
+            "c) 6-8","d) 9-15","e) 16-20","f) 21-30","g) 31-35",
+            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+        op_cyc = op_df[(op_df["File Type"]=="Cyclic") & (op_df["Ageing"].isin([
+            "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
+        ]))].sort_values("Unit")
+
+        # ---CHANGE 2: use count in sheet tab name---
+        op_nc_tab  = sheet_tab_name(op_nc,  "NC")
+        op_cyc_tab = sheet_tab_name(op_cyc, "Cyclic")
+
         with pd.ExcelWriter(op_out_path, engine='xlsxwriter') as writer:
             op_df.to_excel(writer, sheet_name="OP", index=False)
-            op_nc = op_df[(op_df["File Type"]=="Non Cyclic") & (op_df["Ageing"].isin([
-                "c) 6-8","d) 9-15","e) 16-20","f) 21-30","g) 31-35",
-                "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
-            ]))].sort_values("Unit")
-            op_nc.to_excel(writer, sheet_name="NC", index=False)
-            op_cyc = op_df[(op_df["File Type"]=="Cyclic") & (op_df["Ageing"].isin([
-                "h) 36-60","i) 61-65","j) 66-180","k) 181-365","l) 365+"
-            ]))].sort_values("Unit")
-            op_cyc.to_excel(writer, sheet_name="Cyclic", index=False)
+            op_nc.to_excel(writer, sheet_name=op_nc_tab, index=False)
+            op_cyc.to_excel(writer, sheet_name=op_cyc_tab, index=False)
             build_pivot_sheet(op_df, writer, "Pivot")
-
         wb2 = load_workbook(op_out_path)
         apply_header_format(wb2["OP"], HEADER_COLOR)
         auto_col_width(wb2["OP"])
-        apply_table_format(wb2["NC"], TABLE_COLOR)
-        auto_col_width(wb2["NC"])
-        apply_table_format(wb2["Cyclic"], TABLE_COLOR)
-        auto_col_width(wb2["Cyclic"])
+        apply_table_format(wb2[op_nc_tab], TABLE_COLOR)
+        auto_col_width(wb2[op_nc_tab])
+        apply_table_format(wb2[op_cyc_tab], TABLE_COLOR)
+        auto_col_width(wb2[op_cyc_tab])
         wb2.save(op_out_path)
 
         # Create ZIP of the two output files
@@ -591,8 +590,6 @@ def upload():
         with zipfile.ZipFile(zip_path, 'w') as zf:
             zf.write(ip_out_path, arcname="OUTPUT_IP.xlsx")
             zf.write(op_out_path, arcname="OUTPUT_OP.xlsx")
-
         return send_file(zip_path, as_attachment=True, download_name="processed_outputs.zip")
-
 if __name__ == '__main__':
     app.run(debug=True)
