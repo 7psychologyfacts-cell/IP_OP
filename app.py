@@ -438,7 +438,7 @@ def upload():
 
         ip_df.loc[
             (ip_df["Sponsor Type"] == "Government") &
-            (ip_df["TPA Name"].str.contains("central|Central", case=False, na=False)) &
+            (ip_df["TPA Name"].str.contains("central gov|Central Gov", case=False, na=False)) &
             (ip_df["File Type"] == ""),
             "File Type"
         ] = "Cyclic"
