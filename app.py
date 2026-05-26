@@ -373,6 +373,7 @@ def upload():
         if 'Unit' in df.columns:
             df = df[~df["Unit"].str.contains("Zynova", na=False)]
             df = df[~df["Unit"].str.contains("--End-", na=False)]
+            df = df[~df["Unit"].str.contains("Gwalior", na=False)]
         df["TPA Name"] = df["TPA Name"].fillna(df["Sponsor/Insurance"])
         df = df.sort_values(by="Admission No.", na_position='last')
         # Split IP & OP
